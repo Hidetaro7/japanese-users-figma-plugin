@@ -1,5 +1,10 @@
 # Japanese Users for Figma
 
+![cover-japaneseusers](https://user-images.githubusercontent.com/281424/108389563-22679d80-7253-11eb-8225-c236e589977b.png)
+
+ダミーの日本人ユーザーリストを手早く作成できるFigmaプラグイン
+
+![Plugin icon - 1](https://user-images.githubusercontent.com/281424/108389585-272c5180-7253-11eb-88e2-cef723f28fe3.png)
 
 This demonstrates:
 
