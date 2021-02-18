@@ -1,8 +1,5 @@
-# Vue
+# Japanese Users for Figma
 
-<img src="../_screenshots/webpack.png" width="400" />
-
-Creates rectangles (same as the [Webpack sample plugin][webpack]).
 
 This demonstrates:
 
@@ -21,6 +18,7 @@ To build:
     $ npx webpack
 
 n 11.14.0
-\$ yarn watch
+
+    $ yarn watch
 
 [webpack]: ../webpack/
