@@ -55,8 +55,12 @@
 
       <div class="excute-auto-exchange">
         <p style="margin-top: 0;">フレームまたはインスタンスを選択してください</p>
-        <button class="button" @click="flushUser">日本人プロフィールに変換</button>
+        <button class="button" @click="flushUser">変換！！</button>
       </div>
+    </div>
+
+    <div class="hidden">
+      <img ref="faceImages" class="face-images" src="./images/ookawa.webp" alt="ookawa">
     </div>
     
   </div>
@@ -208,8 +212,17 @@ export default {
   },
   methods: {
     flushUser: function() {
+      //画像を生成
+      const image = this.$refs.faceImages;
+      const imageSize = {w: image.clientWidth, h: image.clientHeight}
+      const canvas = document.createElement("canvas");
+      canvas.width = imageSize.w;
+      canvas.height = imageSize.h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(image, 0,0 );
+      const imageData = ctx.getImageData(0, 0, image.width, image.height);
       parent.postMessage(
-        { pluginMessage: { type: "auto-exchange", params: "_userParam" } },
+        { pluginMessage: { type: "auto-exchange", params: "_userParam", faceImages: imageData } },
         "*"
       );
     },

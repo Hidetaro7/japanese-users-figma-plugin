@@ -1,8 +1,10 @@
 import users from "./userdata"
+import pakutasoUsers from "./pakutasoUsers"
 
 const autoExchange = async (node, user) => {
   const fontname:FontName = node.getRangeFontName(0, node.characters.length-1) as FontName;
   await figma.loadFontAsync(fontname)
+  
   switch(node.characters) {
     case "名前":
       node.characters = user.name;
@@ -27,6 +29,27 @@ const autoExchange = async (node, user) => {
       break;                
   }
 }
+const renderImage = (user:string, faceImages, node:Node) => {
+  //console.log(faceImages)
+  /* const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const newBytes = await encode(canvas, ctx, faceImages) */
+  
+  const newImg = figma.createImage(faceImages).hash;
+  console.log(newImg)
+  /* node.fills = [newImg] */
+};
+/* async function encode(canvas, ctx, imageData) {
+  return await new Promise((resolve, reject) => {
+    ctx.putImageData(imageData, 0, 0)
+    canvas.toBlob(blob => {
+      const reader:FileReader = new FileReader()
+      reader.onload = () => resolve(new Uint8Array(reader.result))
+      reader.onerror = () => reject(new Error('Could not read from blob'))
+      reader.readAsArrayBuffer(blob)
+    })
+  })
+} */
 
 figma.showUI(__html__, { width: 500, height: 700 });
 
@@ -36,9 +59,11 @@ figma.ui.onmessage = async msg => {
     page.selection.forEach(async anynode => {
       if(anynode.type === "FRAME" || anynode.type === "INSTANCE") {
         // 自動変換
-        const user = users[Math.floor(Math.random() * users.length)]
+        const user = pakutasoUsers[Math.floor(Math.random() * pakutasoUsers.length)]
         const searchTextNode = (node) => {
-          if(node.type === "TEXT") {
+          if(node.name === "photo") {
+            renderImage(user.photoURL, msg.faceImages, node);
+          } else if(node.type === "TEXT") {
             autoExchange(node, user)
           } else if(node.type === "FRAME" || node.type === "GROUP" && node.children.length !== 0) {
             node.children.forEach(moreChildNode => {
