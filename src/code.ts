@@ -2,8 +2,10 @@ import users from "./userdata"
 import pakutasoUsers from "./pakutasoUsers"
 
 const autoExchange = async (node, user) => {
-  const fontname:FontName = node.getRangeFontName(0, node.characters.length-1) as FontName;
-  await figma.loadFontAsync(fontname)
+  let len = node.characters.length
+  for (let i = 0; i < len; i++) {
+    await figma.loadFontAsync(node.getRangeFontName(i, i+1))
+  }
   
   switch(node.characters) {
     case "名前":
@@ -29,27 +31,12 @@ const autoExchange = async (node, user) => {
       break;                
   }
 }
-const renderImage = (user:string, faceImages, node:Node) => {
-  //console.log(faceImages)
-  /* const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  const newBytes = await encode(canvas, ctx, faceImages) */
-  
-  const newImg = figma.createImage(faceImages).hash;
-  console.log(newImg)
-  /* node.fills = [newImg] */
+const renderImage = (userNum:number, faceImages, node) => {
+  const image = faceImages[userNum];
+  console.log(image)
+  const hash = figma.createImage(image).hash;
+  node.fills = [{ type: "IMAGE" as const, scaleMode: "FILL", imageHash: hash}];
 };
-/* async function encode(canvas, ctx, imageData) {
-  return await new Promise((resolve, reject) => {
-    ctx.putImageData(imageData, 0, 0)
-    canvas.toBlob(blob => {
-      const reader:FileReader = new FileReader()
-      reader.onload = () => resolve(new Uint8Array(reader.result))
-      reader.onerror = () => reject(new Error('Could not read from blob'))
-      reader.readAsArrayBuffer(blob)
-    })
-  })
-} */
 
 figma.showUI(__html__, { width: 500, height: 700 });
 
@@ -62,7 +49,7 @@ figma.ui.onmessage = async msg => {
         const user = pakutasoUsers[Math.floor(Math.random() * pakutasoUsers.length)]
         const searchTextNode = (node) => {
           if(node.name === "photo") {
-            renderImage(user.photoURL, msg.faceImages, node);
+            renderImage(user.photoIndex, msg.faceImages, node);
           } else if(node.type === "TEXT") {
             autoExchange(node, user)
           } else if(node.type === "FRAME" || node.type === "GROUP" && node.children.length !== 0) {

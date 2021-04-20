@@ -59,8 +59,8 @@
       </div>
     </div>
 
-    <div class="hidden">
-      <img ref="faceImages" class="face-images" src="./images/ookawa.webp" alt="ookawa">
+    <div style="display: none">
+      <img ref="faceImages" class="face-images" src="./images/images.jpg" alt="">
     </div>
     
   </div>
@@ -203,6 +203,7 @@
 
 <script>
 import "tailwindcss/tailwind.css";
+import pakutasoUsers from "./pakutasoUsers"
 export default {
   name: "App",
   data() {
@@ -211,20 +212,39 @@ export default {
     };
   },
   methods: {
-    flushUser: function() {
-      //画像を生成
-      const image = this.$refs.faceImages;
-      const imageSize = {w: image.clientWidth, h: image.clientHeight}
-      const canvas = document.createElement("canvas");
-      canvas.width = imageSize.w;
-      canvas.height = imageSize.h;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(image, 0,0 );
-      const imageData = ctx.getImageData(0, 0, image.width, image.height);
-      parent.postMessage(
-        { pluginMessage: { type: "auto-exchange", params: "_userParam", faceImages: imageData } },
-        "*"
-      );
+    generateImageArray(index) {
+      return new Promise((resolve, reject) => {
+        //画像を生成
+        const image = this.$refs.faceImages;
+        const canvas = document.createElement("canvas");
+        const H = 300;
+        canvas.width = H;
+        canvas.height = H;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(image, index*H, 0, H, H, 0, 0, H, H );
+        canvas.toBlob(blob => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            resolve(new Uint8Array(reader.result))
+          }
+          reader.onerror = () => {reject(new Error('Could not read from blob'))}
+          reader.readAsArrayBuffer(blob)
+        })
+      }) 
+    },
+    flushUser: function () {
+      const ps = []
+      pakutasoUsers.forEach( async (user, index) => {
+        const p = await this.generateImageArray(index);
+        ps.push(p)
+        if(index >= pakutasoUsers.length-1) {
+          parent.postMessage(
+            { pluginMessage: { type: "auto-exchange", params: "_userParam", faceImages: ps } },
+          "*"
+          );
+        }
+      })
+      
     },
     flushUserSingle(_param) {
       parent.postMessage(
