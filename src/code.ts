@@ -1,70 +1,77 @@
 import users from "./userdata"
 import pakutasoUsers from "./pakutasoUsers"
 
-const autoExchange = async (node, user) => {
-  let len = node.characters.length
-  for (let i = 0; i < len; i++) {
-    await figma.loadFontAsync(node.getRangeFontName(i, i+1))
-  }
+const autoExchange =  (node, user) => {
+  return new Promise(async (resolve, reject) => {
+    let len = node.characters.length
+    for (let i = 0; i < len; i++) {
+      await figma.loadFontAsync(node.getRangeFontName(i, i+1))
+    }
+    switch(node.characters) {
+      case "名前":
+        node.characters = user.name;
+        break;
+      case "ふりがな":
+        node.characters = user.kana;
+        break;
+      case "住所":
+        node.characters = user.pref + user.city + user.town + user.add1;
+        break;
+      case "都道府県名":
+        node.characters = user.pref;
+        break;
+      case "都市名":
+        node.characters = user.pref + user.town;
+        break;
+      case "email":
+        node.characters = user.email;
+        break;  
+      case "自己紹介":
+        node.characters = user.introduce;
+        break;                
+    }
+    resolve(node);
+  })
   
-  switch(node.characters) {
-    case "名前":
-      node.characters = user.name;
-      break;
-    case "ふりがな":
-      node.characters = user.kana;
-      break;
-    case "住所":
-      node.characters = user.pref + user.city + user.town + user.add1;
-      break;
-    case "都道府県名":
-      node.characters = user.pref;
-      break;
-    case "都市名":
-      node.characters = user.pref + user.town;
-      break;
-    case "email":
-      node.characters = user.email;
-      break;  
-    case "自己紹介":
-      node.characters = user.introduce;
-      break;                
-  }
 }
-const renderImage = (userNum:number, faceImages, node) => {
-  const image = faceImages[userNum];
-  console.log(image)
-  const hash = figma.createImage(image).hash;
-  node.fills = [{ type: "IMAGE" as const, scaleMode: "FILL", imageHash: hash}];
-};
+
+let testCount:number = 0
 
 figma.showUI(__html__, { width: 500, height: 700 });
 
 figma.ui.onmessage = async msg => {
   const page:PageNode = figma.currentPage as PageNode;
   if(msg.type === "auto-exchange") {
+    // ユーザーをシャッフル
+    const shuffledUsers = shuffle(pakutasoUsers)
     page.selection.forEach(async anynode => {
+      let user = shuffledUsers[testCount]
+      testCount = testCount >= pakutasoUsers.length-1 ? 0 : ++testCount;
       if(anynode.type === "FRAME" || anynode.type === "INSTANCE") {
-        // 自動変換
-        const user = pakutasoUsers[Math.floor(Math.random() * pakutasoUsers.length)]
-        const searchTextNode = (node) => {
-          if(node.name === "photo") {
-            renderImage(user.photoIndex, msg.faceImages, node);
-          } else if(node.type === "TEXT") {
-            autoExchange(node, user)
-          } else if(node.type === "FRAME" || node.type === "GROUP" && node.children.length !== 0) {
-            node.children.forEach(moreChildNode => {
-              searchTextNode(moreChildNode)
-            });
-          }
+        console.log("-------------------")
+        const searchTextNode = async (node) => {
+            if(node.name === "photo") {
+              console.log(user.pid, "photo")
+              const hash = figma.createImage(msg.faceImages[user.pid]).hash;
+               node.fills = [{ type: "IMAGE" as const, scaleMode: "FILL", imageHash: hash}];
+            } else if(node.type === "TEXT") {
+              console.log(user.pid, "text")
+              await autoExchange(node, user);
+            } else if(node.type === "FRAME" || node.type === "GROUP" && node.children.length !== 0) {
+              node.children.forEach(moreChildNode => {
+                searchTextNode(moreChildNode)
+              });
+            }
         }
-        anynode.children.forEach( node => {
-          searchTextNode(node)
+        anynode.children.forEach(  (node) => {
+          searchTextNode(node);
+          console.log("anynode---", testCount)
         })
       } else {
         figma.ui.postMessage(
           { pluginMessage: { type: "error-message", params: "Frame、もしくはインスタンス以外が選ばれていますが、そちらは無視しました" } });
       }
+
     })
   } else {
     page.selection.forEach(async anynode => {
@@ -113,3 +120,11 @@ figma.ui.onmessage = async msg => {
   
   //figma.closePlugin();
 };
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[j], arr[i]] = [arr[i], arr[j]];
+  }
+  return arr;
+}

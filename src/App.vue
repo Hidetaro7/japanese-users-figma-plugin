@@ -22,7 +22,7 @@
     </div>
 
     <div class="all-exchange container" v-if="modeAll">
-      <div class="content">
+      <!-- <div class="content">
         <div class="title">複数のフレーム・インスタンスをまとめて一括で変換</div>
 
         <p><small>この準備をしましょう！</small></p>
@@ -51,7 +51,11 @@
           <li><b>コンポーネント本体は無視</b>されます、インスタンスを選択してください</li>
           <li>直接テキストを選択しても変換されません、親要素のフレームかインスタンスを選択して変換ボタンを押してください</li>
         </ul>
-      </div>
+      </div> -->
+
+      <!-- <div class="">
+        <img v-for="(img, index) in imgblob" :key="index" :src="img" alt="">
+      </div> -->
 
       <div class="excute-auto-exchange">
         <p style="margin-top: 0;">フレームまたはインスタンスを選択してください</p>
@@ -60,7 +64,7 @@
     </div>
 
     <div style="display: none">
-      <img ref="faceImages" class="face-images" src="./images/images.jpg" alt="">
+      <img ref="faceImages" class="face-images" @load="loadPhotos" src="./images/images.jpg" alt="">
     </div>
     
   </div>
@@ -208,7 +212,9 @@ export default {
   name: "App",
   data() {
     return {
-      modeAll: false
+      modeAll: false,
+      photos: [],
+      imgblob: []
     };
   },
   methods: {
@@ -222,10 +228,12 @@ export default {
         canvas.height = H;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(image, index*H, 0, H, H, 0, 0, H, H );
+       /* console.log(canvas.toDataURL())
+        this.imgblob[index] = canvas.toDataURL() */
         canvas.toBlob(blob => {
           const reader = new FileReader()
           reader.onload = () => {
-            resolve(new Uint8Array(reader.result))
+            resolve({u_array: new Uint8Array(reader.result), blob: blob})
           }
           reader.onerror = () => {reject(new Error('Could not read from blob'))}
           reader.readAsArrayBuffer(blob)
@@ -233,30 +241,31 @@ export default {
       }) 
     },
     flushUser: function () {
-      const ps = []
-      pakutasoUsers.forEach( async (user, index) => {
-        const p = await this.generateImageArray(index);
-        ps.push(p)
-        if(index >= pakutasoUsers.length-1) {
-          parent.postMessage(
-            { pluginMessage: { type: "auto-exchange", params: "_userParam", faceImages: ps } },
-          "*"
-          );
-        }
-      })
-      
+      parent.postMessage(
+        { pluginMessage: { type: "auto-exchange", params: "_userParam", faceImages: this.photos } },
+      "*"
+      );
     },
     flushUserSingle(_param) {
       parent.postMessage(
         { pluginMessage: { type: "single-exchange", params: _param } },
         "*"
       );
+    },
+    loadPhotos() {
+      pakutasoUsers.forEach( async (user, index) => {
+        const p = await this.generateImageArray(index);
+        this.photos[index] = p.u_array
+      })
     }
   },
   created() {
     onmessage = (event) => {
       console.log("got this from the plugin code", event.data.pluginMessage)
     }
+  },
+  mounted() {
+    
   }
 };
 </script>
